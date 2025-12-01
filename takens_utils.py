@@ -6,6 +6,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 import logging
 import scipy as sp
+import matplotlib.ticker as ticker
 
 logger = logging.getLogger("coordinates_embedding")
 from matplotlib.ticker import MaxNLocator
@@ -156,13 +157,13 @@ def computeCorrDim(data_matrix, ells, el_to_fit,ax, colors = ['darkcyan', 'orang
     error_full = np.sqrt(np.diag(pcov_full))
 
 
-    ax.loglog(ells, c_eps, '.', c= colors[0])
-    ax.loglog(ells, 10**(lin_(np.log10(ells), *popt_full)),'--',
+    ax.loglog((ells), c_eps, '.', c= colors[0])
+    ax.loglog((ells), 10**(lin_(np.log10(ells), *popt_full)),'--',
           linewidth=1,  c= colors[0],  label = r'$\nu=%s\pm%s$' %(round(popt_full[0],3), round(error_full[0],3)))
+    ax.set_xticks(np.linspace((ells[0]),(ells[-1]),3),np.around(np.linspace(np.log10(ells[0]),np.log10(ells[-1]),3),3 ))
+    ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
 
-    ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
-    ax.yaxis.set_major_locator(MaxNLocator(nbins=3))
-    ax.legend( )
+    ax.legend()
     ax.grid(which = 'both')
     ax.set_xlabel(r'$\ell$',)
     ax.set_ylabel(r'$C(\ell)$', )
@@ -184,24 +185,29 @@ def plot_traj(sol_pc, y_pc, subfig, proj = '3d'):
     if proj=='3d':
         axLeft = subfig.add_subplot(1,2,1, projection = '3d')
         axRight = subfig.add_subplot(1,2,2, projection = '3d')
+    elif proj == '2d':
+        axLeft = subfig.add_subplot(1,2,1,)
+        axRight = subfig.add_subplot(1,2,2,)
     axLeft.plot(*sol_pc[:, ],'-', color = 'black')
     axRight.plot(*y_pc[:, ], '-',color = 'black')
     
     for ax in [axLeft, axRight]:
             ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
             ax.yaxis.set_major_locator(MaxNLocator(nbins=3))
-            ax.zaxis.set_major_locator(MaxNLocator(nbins=3))
+
             ax.set_xlabel('$x$')
             ax.set_ylabel('$y$')
-            ax.set_zlabel('$z$')
+            if proj == '3d':
+                ax.zaxis.set_major_locator(MaxNLocator(nbins=3))
+                ax.set_zlabel('$z$')
 
 
-def compare_diagnostics(sol, y, y_pc, fs, ells_full = np.logspace(-3.5,-2.5, 100), ells_delay =np.logspace(-4,-3.5, 100) ):
+def compare_diagnostics(sol, y, y_pc, fs, ells_full = np.logspace(-3.5,-2.5, 100), ells_delay =np.logspace(-4,-3.5, 100), proj = '3d' ):
     fig = plt.figure(figsize = (7,10), constrained_layout = True)
     subfigs = fig.subfigures(3, 1, hspace=0.07,)
 
 
-    plot_traj(sol, y_pc, subfigs[2])
+    plot_traj(sol, y_pc, subfigs[2], proj=proj)
     axTop = subfigs[0].subplots(1,2)
     plot_spectrum(axTop[0], sol[:,:], fs)
     axTop[0].set_title('Full')
@@ -219,5 +225,5 @@ def compare_diagnostics(sol, y, y_pc, fs, ells_full = np.logspace(-3.5,-2.5, 100
     data_cd = y[:,::10]
     el_to_fit = np.arange(0,len(ells_delay)-1, 1, dtype= int) # Use first len(ells)-el_to_fit values of l to find the params
     
-    computeCorrDim(data_cd.T, ells_delay, el_to_fit,axCenter[1])
-    #fig.tight_layout()
+    computeCorrDim(data_cd.T, ells_delay, el_to_fit, axCenter[1])
+    return fig
